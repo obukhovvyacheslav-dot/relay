@@ -1,5 +1,5 @@
 from fastapi import FastAPI, WebSocket
-import json
+from fastapi.responses import Response
 
 app = FastAPI()
 
@@ -10,8 +10,7 @@ async def ws(ws: WebSocket):
         data = await ws.receive_text()
         print(data)
 
-@app.post("/voice")
-async def voice():
+def twiml():
     return """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
@@ -21,3 +20,11 @@ async def voice():
     />
   </Connect>
 </Response>"""
+
+@app.post("/voice")
+async def voice_post():
+    return Response(content=twiml(), media_type="application/xml")
+
+@app.get("/voice")
+async def voice_get():
+    return Response(content=twiml(), media_type="application/xml")
