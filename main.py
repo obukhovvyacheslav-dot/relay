@@ -11,7 +11,7 @@ def twiml():
   <Connect>
     <ConversationRelay
       url="wss://relay-ug27.onrender.com/ws"
-      welcomeGreeting="Say something"
+      welcomeGreeting="Press any key, then say something"
     />
   </Connect>
 </Response>"""
@@ -27,36 +27,47 @@ async def voice_get():
 @app.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
     await ws.accept()
+
+    did_setup = False
+
     try:
         while True:
-            raw = await ws.receive()
-
-            text = raw.get("text")
-            if text is None and raw.get("bytes") is not None:
-                text = raw["bytes"].decode("utf-8", errors="ignore")
-
-            if not text:
-                continue
-
-            print("IN:", text)
+            msg = await ws.receive_text()
+            print("IN RAW:", msg)
 
             try:
-                msg = json.loads(text)
+                data = json.loads(msg)
             except:
                 continue
 
-            t = msg.get("type")
+            t = data.get("type")
 
-            if t == "setup":
-                out = {"type": "text", "token": "OK. Say something.", "last": True}
-                await ws.send_text(json.dumps(out))
-                print("OUT:", out)
+            if t == "setup" and not did_setup:
+                did_setup = True
+
+                # говоришь по-русски → распознавание по-русски
+                await ws.send_text(json.dumps({
+                    "type": "language",
+                    "transcriptionLanguage": "ru-RU",
+                    "ttsLanguage": "en-US"
+                }))
+
+                # один раз сказать "OK"
+                await ws.send_text(json.dumps({
+                    "type": "text",
+                    "token": "OK. Say something.",
+                    "last": True
+                }))
 
             if t == "prompt":
-                # просто подтверждение, чтобы проверить TTS
-                out1 = {"type": "text", "token": "I heard you.", "last": True}
-                await ws.send_text(json.dumps(out1))
-                print("OUT:", out1)
+                vp = data.get("voicePrompt")
+                print("PROMPT:", vp)
+
+                await ws.send_text(json.dumps({
+                    "type": "text",
+                    "token": "I heard you.",
+                    "last": True
+                }))
 
     except WebSocketDisconnect:
         pass
