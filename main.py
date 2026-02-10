@@ -11,7 +11,7 @@ def twiml():
   <Connect>
     <ConversationRelay
       url="wss://relay-ug27.onrender.com/ws"
-      welcomeGreeting="Press any key, then say something"
+      welcomeGreeting="Press any key, then speak"
     />
   </Connect>
 </Response>"""
@@ -27,47 +27,24 @@ async def voice_get():
 @app.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
     await ws.accept()
-
-    did_setup = False
-
     try:
         while True:
-            msg = await ws.receive_text()
-            print("IN RAW:", msg)
+            raw = await ws.receive()
+            print("RAW EVENT:", raw)
 
-            try:
-                data = json.loads(msg)
-            except:
-                continue
+            text = raw.get("text")
+            if text is None and raw.get("bytes") is not None:
+                text = raw["bytes"].decode("utf-8", errors="ignore")
 
-            t = data.get("type")
+            if text:
+                print("TEXT EVENT:", text)
 
-            if t == "setup" and not did_setup:
-                did_setup = True
-
-                # говоришь по-русски → распознавание по-русски
-                await ws.send_text(json.dumps({
-                    "type": "language",
-                    "transcriptionLanguage": "ru-RU",
-                    "ttsLanguage": "en-US"
-                }))
-
-                # один раз сказать "OK"
-                await ws.send_text(json.dumps({
-                    "type": "text",
-                    "token": "OK. Say something.",
-                    "last": True
-                }))
-
-            if t == "prompt":
-                vp = data.get("voicePrompt")
-                print("PROMPT:", vp)
-
-                await ws.send_text(json.dumps({
-                    "type": "text",
-                    "token": "I heard you.",
-                    "last": True
-                }))
+                # попробуем распарсить
+                try:
+                    data = json.loads(text)
+                    print("JSON TYPE:", data.get("type"))
+                except:
+                    pass
 
     except WebSocketDisconnect:
-        pass
+        print("WS DISCONNECT")
