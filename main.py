@@ -13,6 +13,7 @@ def voice():
     return """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
-    <ConversationRelay url="wss://RENDER_URL/ws" />
+    <ConversationRelay url="wss://relay-ug27.onrender.com/ws" />
   </Connect>
+
 </Response>"""
