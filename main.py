@@ -10,8 +10,8 @@ async def ws(ws: WebSocket):
         data = await ws.receive_text()
         print(data)
 
-@app.get("/voice")
-def voice():
+@app.post("/voice")
+async def voice():
     return """<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
