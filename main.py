@@ -1,14 +1,18 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import Response
+from starlette.websockets import WebSocketDisconnect
 
 app = FastAPI()
 
 @app.websocket("/ws")
-async def ws(ws: WebSocket):
+async def ws_endpoint(ws: WebSocket):
     await ws.accept()
-    while True:
-        data = await ws.receive_text()
-        print(data)
+    try:
+        while True:
+            msg = await ws.receive_text()
+            print(msg)
+    except WebSocketDisconnect:
+        pass
 
 def twiml():
     return """<?xml version="1.0" encoding="UTF-8"?>
